@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 Binhex <https://www.binhex.cloud>
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="social_media_view_kanban" model="ir.ui.view">
+        <field name="name">social.media.kanban</field>
+        <field name="model">social.media</field>
+        <field name="arch" type="xml">
+            <kanban create="0" edit="0" delete="0" js_class="social_kanban">
+                <field name="name" />
+                <field name="description" />
+                <field name="image" />
+                <field name="media_type" />
+                <templates>
+                    <t t-name="card">
+                        <div
+                            t-attf-class="o_social_card o_social_media_card o_social_network_{{ record.media_type.raw_value or 'none' }} d-flex flex-column rounded"
+                        >
+                            <div class="o_social_media_cover">
+                                <img
+                                    t-attf-src="/web/image/social.media/{{ record.id.raw_value }}/image"
+                                    class="o_social_logo o_social_media_logo"
+                                    t-att-alt="record.name.raw_value"
+                                />
+                            </div>
+                            <div
+                                class="o_social_media_body d-flex flex-column flex-grow-1"
+                            >
+                                <h5
+                                    class="o_social_media_name"
+                                    t-esc="record.name.raw_value"
+                                />
+                                <p
+                                    class="o_social_media_description"
+                                    t-esc="record.description.raw_value"
+                                />
+                                <button
+                                    type="object"
+                                    class="o_social_media_button btn btn-primary mt-auto"
+                                    name="action_open_account"
+                                    title="Link one of the accounts of this social media."
+                                >Associate account
+                                </button>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="social_media_action" model="ir.actions.act_window">
+        <field name="name">Social Media</field>
+        <field name="res_model">social.media</field>
+        <field name="view_mode">kanban</field>
+    </record>
+</odoo>

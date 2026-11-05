@@ -1,0 +1,729 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 Binhex <https://www.binhex.cloud>
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="social_post_view_form" model="ir.ui.view">
+        <field name="name">social.post.form</field>
+        <field name="model">social.post</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        type="object"
+                        name="action_create_post_account"
+                        class="oe_highlight"
+                        string="Post"
+                        invisible="hide_post"
+                        title="Publish the post right away on the selected accounts, without waiting for the planned date. Only the publications still pending are sent: what already reached the social media is not sent twice."
+                    />
+                    <button
+                        type="object"
+                        name="action_draft"
+                        string="Draft"
+                        invisible="state in ('draft','published','publishing','partially_published')"
+                        title="Take the post back to draft to work on it again. Nothing is sent to the social media, and nothing already published is withdrawn."
+                    />
+                    <button
+                        type="object"
+                        name="action_cancel"
+                        string="Cancel"
+                        invisible="state in ('draft','cancelled','published','publishing','partially_published')"
+                        title="Give up on sending this post. It can only be cancelled while nothing has left for the social media, and it can be taken back to draft afterwards."
+                    />
+                    <button
+                        type="object"
+                        name="toggle_active"
+                        string="Unarchive"
+                        invisible="active"
+                        title="Bring the post back to the lists it was taken out of. It publishes nothing by itself."
+                    />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        options="{'clickable': false}"
+                    />
+                    <field name="active" invisible="1" />
+                </header>
+                <div
+                    invisible="not any_failed_post"
+                    class="alert alert-info"
+                    role="alert"
+                >
+                    Press the publish button to retry sending failed posts.
+                </div>
+                <div
+                    invisible="not content_locked"
+                    class="alert alert-info"
+                    role="alert"
+                >
+                    This post is already published on at least one social
+                    media, so its content can no longer be changed. Create a
+                    new post to publish something different.
+                </div>
+                <sheet>
+                    <widget
+                        name="web_ribbon"
+                        title="Archived"
+                        bg_color="text-bg-danger"
+                        invisible="active"
+                    />
+                    <field name="hide_post" invisible="1" />
+                    <field name="any_failed_post" invisible="1" />
+                    <field name="content_locked" invisible="1" />
+                    <div class="o_social_form_layout">
+                        <div class="o_social_form_main">
+                            <section class="o_social_form_section">
+                                <h3>Accounts</h3>
+                                <field
+                                    name="account_ids"
+                                    widget="many2many_tags"
+                                    nolabel="1"
+                                    readonly="state != 'draft' or content_locked"
+                                    options="{'no_quick_create': True, 'no_create_edit': True, 'no_create': True, 'no_open': True}"
+                                />
+                                <p class="o_social_form_help">
+                                    A post can be sent to several accounts and
+                                    networks at once.
+                                </p>
+                            </section>
+                            <section class="o_social_form_section">
+                                <h3>Message</h3>
+                                <field
+                                    name="message"
+                                    nolabel="1"
+                                    readonly="state != 'draft' or content_locked"
+                                />
+                            </section>
+                            <section class="o_social_form_section">
+                                <h3>Media</h3>
+                                <div class="o_social_form_field mb-2">
+                                    <label
+                                        for="image_ids"
+                                        class="o_form_label"
+                                    >Images</label>
+                                    <field
+                                        name="image_ids"
+                                        nolabel="1"
+                                        widget="social_media_binary"
+                                        options="{'accepted_file_extensions': 'image/*'}"
+                                        readonly="state != 'draft' or content_locked"
+                                    />
+                                </div>
+                                <div class="o_social_form_field">
+                                    <label
+                                        for="video_ids"
+                                        class="o_form_label"
+                                    >Videos</label>
+                                    <field
+                                        name="video_ids"
+                                        nolabel="1"
+                                        widget="social_media_binary"
+                                        options="{'accepted_file_extensions': 'video/*'}"
+                                        readonly="state != 'draft' or content_locked"
+                                    />
+                                </div>
+                            </section>
+                            <section class="o_social_form_section">
+                                <h3>Publishing</h3>
+                                <div class="o_social_form_grid">
+                                    <div
+                                        class="o_social_form_field"
+                                        invisible="not message"
+                                    >
+                                        <label
+                                            for="send_post"
+                                            class="o_form_label"
+                                        >Send Post</label>
+                                        <field
+                                            name="send_post"
+                                            nolabel="1"
+                                            readonly="state != 'draft' or content_locked"
+                                        />
+                                    </div>
+                                    <div
+                                        class="o_social_form_field"
+                                        invisible="send_post != 'schedule'"
+                                    >
+                                        <label
+                                            for="send_post_date"
+                                            class="o_form_label"
+                                        >Send Post Date</label>
+                                        <field
+                                            name="send_post_date"
+                                            nolabel="1"
+                                            readonly="send_post != 'schedule' or state != 'draft' or content_locked"
+                                            required="send_post == 'schedule'"
+                                            options="{'min_date': 'today'}"
+                                        />
+                                    </div>
+                                    <div class="o_social_form_field">
+                                        <label
+                                            for="campaign_id"
+                                            class="o_form_label"
+                                        >Campaign</label>
+                                        <field
+                                            name="campaign_id"
+                                            nolabel="1"
+                                            readonly="state != 'draft' or content_locked"
+                                        />
+                                    </div>
+                                    <div class="o_social_form_field">
+                                        <label
+                                            for="user_id"
+                                            class="o_form_label"
+                                        >Responsible</label>
+                                        <field
+                                            name="user_id"
+                                            nolabel="1"
+                                            readonly="1"
+                                            groups="!social_media_base.group_social_media_manager"
+                                        />
+                                        <field
+                                            name="user_id"
+                                            nolabel="1"
+                                            groups="social_media_base.group_social_media_manager"
+                                        />
+                                    </div>
+                                </div>
+                            </section>
+                            <section
+                                class="o_social_form_section"
+                                invisible="not message_error and not message_info"
+                            >
+                                <h3>Validation</h3>
+                                <div
+                                    class="alert alert-danger mb-2"
+                                    role="alert"
+                                    invisible="not message_error"
+                                >
+                                    <field name="message_error" readonly="1" />
+                                </div>
+                                <div
+                                    class="alert alert-info mb-0"
+                                    role="alert"
+                                    invisible="not message_info"
+                                >
+                                    <field name="message_info" readonly="1" />
+                                </div>
+                            </section>
+                        </div>
+                        <aside class="o_social_form_preview">
+                            <section class="o_social_form_section">
+                                <div class="o_social_preview_header">
+                                    <span class="o_social_preview_title">Preview</span>
+                                    <span class="o_social_preview_hint">
+                                        How it will look on each network
+                                    </span>
+                                </div>
+                                <field
+                                    name="post_preview"
+                                    nolabel="1"
+                                    widget="social_post_preview"
+                                />
+                            </section>
+                        </aside>
+                    </div>
+                    <notebook
+                        invisible="state in ('draft','planned','cancelled') and (post_account_ids and not any_failed_post)"
+                    >
+                        <page
+                            name="post_account_ids"
+                            string="Posts"
+                            invisible="not post_account_ids"
+                        >
+                            <field
+                                name="post_account_ids"
+                                nolabel="1"
+                                readonly="1"
+                                widget="social_post_account_kanban"
+                            >
+                                <kanban>
+                                    <field name="message" />
+                                    <field name="published_date" />
+                                    <field name="image_urls" />
+                                    <field name="video_urls" />
+                                    <field name="comment_count" />
+                                    <field name="comments_supported" />
+                                    <field name="like_count" />
+                                    <field name="impression_count" />
+                                    <field name="post_account_url" />
+                                    <field name="author" />
+                                    <field name="state" />
+                                    <field name="media_type" />
+                                    <field name="account_id" />
+                                    <field name="failed_description" />
+                                    <templates>
+                                        <t t-name="card">
+                                            <div
+                                                t-attf-class="o_social_card o_social_network_{{ record.media_type.raw_value or 'none' }} rounded cursor-pointer oe_kanban_social_dashboard d-flex flex-column justify-content-between"
+                                            >
+                                                <div class="d-flex justify-content-end">
+                                                    <field
+                                                        name="state"
+                                                        widget="badge"
+                                                        decoration-muted="state == 'ready'"
+                                                        decoration-success="state == 'posted'"
+                                                        decoration-danger="state in ('failed', 'deleted')"
+                                                    />
+                                                </div>
+                                                <t
+                                                    t-call="social_media_base.postAccountHeader"
+                                                />
+
+                                                <div class="oe_kanban_content">
+                                                    <t
+                                                        t-set="images"
+                                                        t-value="JSON.parse(record.image_urls.raw_value or '[]')"
+                                                    />
+                                                    <t
+                                                        t-call="social_media_base.postAccountMessageImages"
+                                                    />
+                                                    <t
+                                                        t-set="videos"
+                                                        t-value="JSON.parse(record.video_urls.raw_value or '[]')"
+                                                    />
+                                                    <div
+                                                        t-if="videos.length"
+                                                        class="d-flex align-items-center gap-2 pt-2"
+                                                    >
+                                                        <i
+                                                            class="fa fa-video-camera"
+                                                            aria-hidden="true"
+                                                        />
+                                                        <span>Video (<t
+                                                            t-esc="videos.length"
+                                                        />)</span>
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    t-if="record.state.raw_value == 'failed' and record.failed_description.raw_value"
+                                                    class="alert alert-danger mt-2 mb-0 p-2"
+                                                    role="alert"
+                                                >
+                                                    <field name="failed_description" />
+                                                </div>
+                                                <div class="oe_kanban_footer">
+                                                    <div
+                                                        t-if="record.like_count.raw_value or record.comment_count.raw_value or record.impression_count.raw_value"
+                                                        class="o_social_figures"
+                                                    >
+                                                        <span
+                                                            class="o_social_figure"
+                                                            title="Likes"
+                                                        >
+                                                            <i
+                                                                class="fa fa-heart-o"
+                                                                aria-hidden="true"
+                                                            />
+                                                            <t
+                                                                t-esc="record.like_count.raw_value"
+                                                            />
+                                                        </span>
+                                                        <button
+                                                            t-if="record.comments_supported.raw_value"
+                                                            type="button"
+                                                            class="o_social_figure social-post-comment btn btn-link p-0"
+                                                            title="Comments"
+                                                        >
+                                                            <i
+                                                                class="fa fa-comments-o"
+                                                                aria-hidden="true"
+                                                            />
+                                                            <t
+                                                                t-esc="record.comment_count.raw_value"
+                                                            />
+                                                        </button>
+                                                        <span
+                                                            t-else=""
+                                                            class="o_social_figure"
+                                                            title="Comments"
+                                                        >
+                                                            <i
+                                                                class="fa fa-comments-o"
+                                                                aria-hidden="true"
+                                                            />
+                                                            <t
+                                                                t-esc="record.comment_count.raw_value"
+                                                            />
+                                                        </span>
+                                                        <span
+                                                            class="o_social_figure"
+                                                            title="Impressions"
+                                                        >
+                                                            <i
+                                                                class="fa fa-eye"
+                                                                aria-hidden="true"
+                                                            />
+                                                            <t
+                                                                t-esc="record.impression_count.raw_value"
+                                                            />
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </templates>
+                                </kanban>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="social_post_view_tree" model="ir.ui.view">
+        <field name="name">social.post.tree</field>
+        <field name="model">social.post</field>
+        <field name="arch" type="xml">
+            <list
+                decoration-muted="state == 'draft'"
+                decoration-info="state in ('planned','publishing')"
+                decoration-warning="state == 'partially_published'"
+                decoration-success="state == 'published'"
+                decoration-danger="state == 'cancelled'"
+            >
+                <field name="message" />
+                <field name="account_names" string="Accounts" />
+                <field name="published_date" optional="show" />
+                <field name="send_post_date" optional="hide" />
+                <field name="user_id" optional="show" />
+                <field name="campaign_id" optional="show" />
+                <field name="count_post_likes" optional="hide" />
+                <field name="count_post_comments" optional="hide" />
+                <field name="count_post_impression" optional="hide" />
+                <!-- The clicks Odoo counts on its own tracked links, the one
+                     figure of a post base knows without asking a social
+                     media. Hidden by default: it is the figure the campaign
+                     cares about, and the list of posts is read for what the
+                     social media report. Switched on from the column
+                     selector. -->
+                <field name="link_click_count" optional="hide" />
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-muted="state == 'draft'"
+                    decoration-info="state in ('planned','publishing')"
+                    decoration-warning="state == 'partially_published'"
+                    decoration-success="state == 'published'"
+                    decoration-danger="state == 'cancelled'"
+                />
+            </list>
+        </field>
+    </record>
+
+    <record id="social_post_view_kanban" model="ir.ui.view">
+        <field name="name">social.post.kanban</field>
+        <field name="model">social.post</field>
+        <field name="arch" type="xml">
+            <kanban js_class="social_kanban">
+                <field name="id" />
+                <field name="account_ids" />
+                <field name="account_chips" />
+                <field name="campaign_id" />
+                <field name="message" />
+                <field name="published_date" />
+                <field name="send_post_date" />
+                <field name="count_post_likes" />
+                <field name="count_post_comments" />
+                <field name="count_post_impression" />
+                <field name="any_failed_post" />
+                <field name="image_urls" />
+                <field name="video_urls" />
+                <templates>
+                    <t t-name="card">
+                        <div
+                            class="o_social_card o_social_post_card oe_kanban_global_click rounded"
+                        >
+                            <div class="d-flex flex-column">
+                                <div
+                                    class="d-flex justify-content-between align-items-center o_social_post_card_header"
+                                >
+                                    <t
+                                        t-set="chips"
+                                        t-value="JSON.parse(record.account_chips.raw_value or '[]')"
+                                    />
+                                    <div class="o_social_account_chips">
+                                        <t
+                                            t-foreach="chips"
+                                            t-as="chip"
+                                            t-key="chip.id"
+                                        >
+                                            <span class="o_social_account_chip">
+                                                <span class="o_social_chip_avatar_wrap">
+                                                    <img
+                                                        t-attf-src="/web/image/social.account/{{ chip.id }}/image_256"
+                                                        class="o_social_chip_avatar"
+                                                        t-att-alt="chip.name"
+                                                    />
+                                                    <img
+                                                        t-if="chip.media_id"
+                                                        t-attf-src="/web/image/social.media/{{ chip.media_id }}/image"
+                                                        class="o_social_chip_network"
+                                                        t-att-alt="chip.media_type"
+                                                    />
+                                                </span>
+                                                <span
+                                                    class="o_social_chip_name"
+                                                    t-esc="chip.name"
+                                                />
+                                            </span>
+                                        </t>
+                                    </div>
+                                    <field
+                                        name="state"
+                                        widget="badge"
+                                        decoration-muted="state == 'draft'"
+                                        decoration-info="state in ('planned','publishing')"
+                                        decoration-warning="state == 'partially_published'"
+                                        decoration-success="state == 'published'"
+                                        decoration-danger="state == 'cancelled'"
+                                    />
+                                </div>
+                                <hr />
+                                <div
+                                    t-if="record.message.raw_value"
+                                    class="o_social_post_message"
+                                >
+                                    <t t-esc="record.message.raw_value" />
+                                </div>
+                                <t
+                                    t-set="images"
+                                    t-value="JSON.parse(record.image_urls.raw_value or '[]')"
+                                />
+                                <div t-if="images.length" class="o_social_post_media">
+                                    <t
+                                        t-foreach="images.slice(0, 3)"
+                                        t-as="img"
+                                        t-key="img"
+                                    >
+                                        <div class="o_social_post_thumb">
+                                            <img t-att-src="img" alt="Image" />
+                                            <span
+                                                t-if="img_index == 2 and images.length > 3"
+                                                class="o_social_post_more"
+                                            >+<t t-esc="images.length - 3" /></span>
+                                        </div>
+                                    </t>
+                                </div>
+                                <t
+                                    t-set="videos"
+                                    t-value="JSON.parse(record.video_urls.raw_value or '[]')"
+                                />
+                                <div t-if="videos.length" class="o_social_post_video">
+                                    <video
+                                        t-att-src="videos[0]"
+                                        preload="metadata"
+                                        muted="muted"
+                                        playsinline="playsinline"
+                                    />
+                                    <i
+                                        class="fa fa-play-circle o_social_play"
+                                        aria-hidden="true"
+                                    />
+                                    <span
+                                        t-if="videos.length > 1"
+                                        class="o_social_post_more"
+                                    >+<t t-esc="videos.length - 1" /></span>
+                                </div>
+                                <t
+                                    t-set="campaignWrapperClass"
+                                    t-value="'mt-1 d-flex'"
+                                />
+                                <t t-call="social_media_base.campaignBadge" />
+                                <div
+                                    class="d-flex align-items-center justify-content-between gap-2 mt-1"
+                                >
+                                    <span
+                                        t-if="record.send_post_date.raw_value and record.state.raw_value in ('draft', 'planned')"
+                                        class="text-muted small"
+                                        title="Scheduled for"
+                                    >
+                                        <i class="fa fa-clock-o" aria-hidden="true" />
+                                        <field
+                                            name="send_post_date"
+                                            widget="datetime"
+                                            options="{'showSeconds': false}"
+                                        />
+                                    </span>
+                                    <span
+                                        t-if="record.state.raw_value == 'published' and record.published_date.raw_value"
+                                        class="text-muted small"
+                                        title="Published on"
+                                    >
+                                        <i
+                                            class="fa fa-calendar-check-o"
+                                            aria-hidden="true"
+                                        />
+                                        <field name="published_date" widget="date" />
+                                    </span>
+                                    <span
+                                        t-if="record.any_failed_post.raw_value"
+                                        class="badge text-bg-danger o_social_post_error"
+                                        title="Some of the publications of this post failed"
+                                    >
+                                        <i
+                                        class="fa fa-exclamation-triangle"
+                                        aria-hidden="true"
+                                    />
+                                        Errors
+                                    </span>
+                                </div>
+                                <div
+                                    t-if="record.state.raw_value == 'published' or record.state.raw_value == 'partially_published'"
+                                    class="o_social_post_figures"
+                                >
+                                    <span title="Likes">
+                                        <i class="fa fa-heart-o" aria-hidden="true" />
+                                        <t t-esc="record.count_post_likes.raw_value" />
+                                    </span>
+                                    <span title="Comments">
+                                        <i class="fa fa-comment-o" aria-hidden="true" />
+                                        <t
+                                            t-esc="record.count_post_comments.raw_value"
+                                        />
+                                    </span>
+                                    <span title="Impressions">
+                                        <i class="fa fa-eye" aria-hidden="true" />
+                                        <t
+                                            t-esc="record.count_post_impression.raw_value"
+                                        />
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="social_post_view_search" model="ir.ui.view">
+        <field name="name">social.post.view.search</field>
+        <field name="model">social.post</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="message" />
+                <field name="account_ids" />
+                <field name="user_id" />
+                <field name="campaign_id" />
+                <filter
+                    string="My Posts"
+                    name="my_posts"
+                    domain="[('user_id', '=', uid)]"
+                />
+                <separator />
+                <filter
+                    string="Draft"
+                    name="draft"
+                    domain="[('state', '=', 'draft')]"
+                />
+                <filter
+                    string="Planned"
+                    name="planned"
+                    domain="[('state', '=', 'planned')]"
+                />
+                <filter
+                    string="Published"
+                    name="published"
+                    domain="[('state', '=', 'published')]"
+                />
+                <filter
+                    string="Cancelled"
+                    name="cancelled"
+                    domain="[('state', '=', 'cancelled')]"
+                />
+                <separator />
+                <filter
+                    string="Schedule Date"
+                    name="filter_send_post_date"
+                    date="send_post_date"
+                />
+                <filter
+                    string="Published Date"
+                    name="filter_published_date"
+                    date="published_date"
+                />
+                <separator />
+                <filter
+                    string="With Campaign"
+                    name="with_campaign"
+                    domain="[('campaign_id', '!=', False)]"
+                />
+                <filter
+                    string="Without Campaign"
+                    name="without_campaign"
+                    domain="[('campaign_id', '=', False)]"
+                />
+                <separator />
+                <filter
+                    string="Archived"
+                    name="inactive"
+                    domain="[('active', '=', False)]"
+                />
+                <group>
+                    <filter
+                        string="Responsible"
+                        name="group_by_user"
+                        context="{'group_by': 'user_id'}"
+                    />
+                    <filter
+                        string="Campaign"
+                        name="group_by_campaign_id"
+                        context="{'group_by': 'campaign_id'}"
+                    />
+                    <filter
+                        string="State"
+                        name="group_by_state"
+                        context="{'group_by': 'state'}"
+                    />
+                    <filter
+                        string="Schedule Date"
+                        name="group_by_send_post_date"
+                        context="{'group_by': 'send_post_date'}"
+                    />
+                </group>
+                <searchpanel>
+                    <field name="state" enable_counters="1" />
+                    <field
+                        name="account_ids"
+                        select="multi"
+                        icon="fa-share-alt"
+                        enable_counters="1"
+                        string="Social media"
+                    />
+                </searchpanel>
+            </search>
+        </field>
+    </record>
+
+    <record id="social_post_action" model="ir.actions.act_window">
+        <field name="name">Posts</field>
+        <field name="res_model">social.post</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="social_post_view_search" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first post
+            </p>
+            <p>
+                Write once and publish it to every connected social account.
+                You can schedule it for later or send it right away.
+            </p>
+        </field>
+    </record>
+
+    <!-- Opens straight on the form of a new post, unlike the action of the
+         menu, which lists them. Same split as the native
+         `mass_mailing.action_create_mass_mailings_from_campaign`. -->
+    <record id="social_post_action_from_campaign" model="ir.actions.act_window">
+        <field name="name">New Post</field>
+        <field name="res_model">social.post</field>
+        <field name="view_mode">form,kanban,list</field>
+        <field name="search_view_id" ref="social_post_view_search" />
+        <field
+            name="context"
+        >{'default_campaign_id': active_id, 'search_default_campaign_id': [active_id], 'default_user_id': uid}</field>
+    </record>
+</odoo>
