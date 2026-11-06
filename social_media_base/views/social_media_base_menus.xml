@@ -2,6 +2,11 @@
 <!-- Copyright 2026 Binhex <https://www.binhex.cloud>
      License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
 <odoo>
+    <record id="social_statistics_dashboard_action" model="ir.actions.client">
+        <field name="name">Statistics</field>
+        <field name="tag">social_statistics_dashboard</field>
+    </record>
+
     <menuitem
         name="Social Media"
         id="social_root_menu"
@@ -18,7 +23,7 @@
         <menuitem
             name="Statistics"
             id="social_statistics_menu"
-            action="social_account_statistics_action"
+            action="social_statistics_dashboard_action"
             sequence="2"
         />
         <menuitem
@@ -27,13 +32,6 @@
             sequence="3"
             action="social_post_action"
         />
-        <menuitem
-            name="Campaigns"
-            id="utm_campaign_menu"
-            action="utm.utm_campaign_action"
-            sequence="4"
-        />
-
         <menuitem name="Configuration" id="social_configuration_menu" sequence="100">
             <menuitem
                 name="Accounts"
@@ -46,6 +44,12 @@
                 id="social_media_menu"
                 sequence="6"
                 action="social_media_action"
+            />
+            <menuitem
+                name="UTM Campaigns"
+                id="utm_campaign_config_menu"
+                sequence="10"
+                action="utm.utm_campaign_action"
             />
         </menuitem>
     </menuitem>

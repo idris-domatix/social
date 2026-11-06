@@ -10,7 +10,7 @@ MENU_XML_IDS = (
     "social_dashboard_menu",
     "social_statistics_menu",
     "social_post_menu",
-    "utm_campaign_menu",
+    "utm_campaign_config_menu",
     "social_configuration_menu",
     "social_account_menu",
     "social_media_menu",
